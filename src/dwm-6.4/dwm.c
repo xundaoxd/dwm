@@ -1409,6 +1409,33 @@ scan(void)
 }
 
 void
+runautostart(void)
+{
+    static const char dwmdir[] = "dwm";
+    static const char autostartsh[] = "autostart.sh";
+
+    char *home = getenv("HOME");
+    char *xdgdatahome = getenv("XDG_DATA_HOME");
+
+    char path[256];
+    if (xdgdatahome != NULL && xdgdatahome[0] != '\0') {
+        int ret = snprintf(path, sizeof(path), "%s/%s/%s", xdgdatahome, dwmdir, autostartsh);
+        if (ret > 0 && ret < sizeof(path) && access(path, X_OK)) {
+            goto run;
+        }
+    }
+    if (home != NULL && home[0] != '\0') {
+        int ret = snprintf(path, sizeof(path), "%s/.local/share/%s/%s", home, dwmdir, autostartsh);
+        if (ret == sizeof(path) || ret == 0 || access(path, X_OK)) {
+            goto out;
+        }
+    }
+run:
+    system(path);
+out:
+}
+
+void
 sendmon(Client *c, Monitor *m)
 {
 	if (c->mon == m)
@@ -2140,6 +2167,7 @@ main(int argc, char *argv[])
 		die("pledge");
 #endif /* __OpenBSD__ */
 	scan();
+    runautostart();
 	run();
 	cleanup();
 	XCloseDisplay(dpy);
